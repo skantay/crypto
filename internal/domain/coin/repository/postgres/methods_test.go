@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"testing"
+	"time"
 
 	_ "github.com/lib/pq"
 
@@ -44,12 +45,13 @@ func TestSaveCoinsPositive(t *testing.T) {
 		HourChangePrice: 1.5,
 	}
 
-	err = coinRepo.SaveCoins(ctx, coin)
+	err = coinRepo.SaveCoin(ctx, coin)
 
 	if err != nil {
 		t.Errorf("Expected nil error, but got: %v", err)
 	}
 
+	time.Sleep(time.Second * 23)
 	t.Cleanup(func() {
 		down, err := os.ReadFile("migrations/test.down.sql")
 		if err != nil {
@@ -85,7 +87,7 @@ func TestSaveCoinsNegative(t *testing.T) {
 
 	coin := model.Coin{}
 
-	err = coinRepo.SaveCoins(ctx, coin)
+	err = coinRepo.SaveCoin(ctx, coin)
 
 	if err != nil {
 		t.Errorf("Expected nil error, but got: %v", err)
@@ -201,6 +203,8 @@ func TestGetCoinNegative(t *testing.T) {
 	})
 }
 
+// Test GetMainCoins function
+// Positive Case
 func TestGetMainCoins(t *testing.T) {
 	cfg := config.Database{
 		Postgres: config.Postgres{
@@ -222,13 +226,106 @@ func TestGetMainCoins(t *testing.T) {
 
 	var result []*model.Coin
 
-	result, err = coinRepo.GetMainCoins(ctx)
+	coins := []string{
+		"BTC",
+		"ETH",
+	}
+
+	result, err = coinRepo.GetMainCoins(ctx, coins)
 	if err != nil {
 		t.Errorf("Expected nil error, but got: %v", err)
 	}
 
-	if len(result) != 2 {
+	if len(result) != len(coins) {
 		t.Error("result seems wrong")
+	}
+
+	t.Cleanup(func() {
+		down, err := os.ReadFile("migrations/test.down.sql")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := exec(string(down)); err != nil {
+			t.Fatal(err)
+		}
+		coinRepo.Close()
+	})
+}
+
+// Test GetMainCoins function
+// Negative Case
+func TestGetMainCoinsNegative(t *testing.T) {
+	cfg := config.Database{
+		Postgres: config.Postgres{
+			User:     "user",
+			Password: "pass",
+			Host:     "localhost",
+			DBName:   "domain_test",
+			Port:     5432,
+			SSLMode:  "disable",
+		},
+	}
+
+	coinRepo, exec, err := newTest(t, cfg)
+	if err != nil {
+		t.Errorf("unexpected error: %v", err)
+	}
+
+	ctx := context.Background()
+
+	coins := []string{
+		"NOT FOUND",
+	}
+
+	_, err = coinRepo.GetMainCoins(ctx, coins)
+	if err == nil {
+		t.Errorf("Expected error")
+	}
+
+	if !errors.Is(err, model.ErrNoRecord) {
+		t.Errorf("expected: %v\ngot: %v", model.ErrNoRecord, err)
+	}
+
+	t.Cleanup(func() {
+		down, err := os.ReadFile("migrations/test.down.sql")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := exec(string(down)); err != nil {
+			t.Fatal(err)
+		}
+		coinRepo.Close()
+	})
+}
+
+func TestGetMainCoinsNegative2(t *testing.T) {
+	cfg := config.Database{
+		Postgres: config.Postgres{
+			User:     "user",
+			Password: "pass",
+			Host:     "localhost",
+			DBName:   "domain_test",
+			Port:     5432,
+			SSLMode:  "disable",
+		},
+	}
+
+	coinRepo, exec, err := newTest(t, cfg)
+	if err != nil {
+		t.Errorf("unexpected error: %v", err)
+	}
+
+	ctx := context.Background()
+
+	coins := []string{}
+
+	_, err = coinRepo.GetMainCoins(ctx, coins)
+	if err == nil {
+		t.Errorf("Expected error")
+	}
+
+	if !errors.Is(err, model.ErrEmptySlice) {
+		t.Errorf("expected: %v\ngot: %v", model.ErrNoRecord, err)
 	}
 
 	t.Cleanup(func() {

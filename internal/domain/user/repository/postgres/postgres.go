@@ -14,6 +14,6 @@ func (c userRepository) Close() {
 	c.db.Close()
 }
 
-func New(db *sql.DB) (repository.UserRepository, error) {
-	return userRepository{db}, nil
+func New(db *sql.DB) repository.UserRepository {
+	return userRepository{db}
 }

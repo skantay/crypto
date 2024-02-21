@@ -1,2 +1,2 @@
-DROP TABLE IF EXISTS coins;
-
+DROP TABLE IF EXISTS domain.coins;
+DROP SCHEMA IF EXISTS domain;
