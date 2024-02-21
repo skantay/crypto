@@ -8,8 +8,8 @@ import (
 	"os"
 	"testing"
 
-	_ "github.com/golang-migrate/migrate/v4/database/postgres"
-	_ "github.com/golang-migrate/migrate/v4/source/file"
+	_ "github.com/lib/pq"
+
 	"github.com/skantay/crypto/config"
 	"github.com/skantay/crypto/internal/domain/coin/model"
 	"github.com/skantay/crypto/internal/domain/coin/repository"
@@ -29,7 +29,7 @@ func TestSaveCoinsPositive(t *testing.T) {
 		},
 	}
 
-	userRepo, exec, err := newTest(t, cfg)
+	coinRepo, exec, err := newTest(t, cfg)
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
@@ -37,14 +37,14 @@ func TestSaveCoinsPositive(t *testing.T) {
 	ctx := context.Background()
 
 	coin := model.Coin{
-		Name:            "BTC",
+		Name:            "BNB",
 		Price:           150,
 		MinPrice:        100,
 		MaxPrice:        200,
 		HourChangePrice: 1.5,
 	}
 
-	err = userRepo.SaveCoins(ctx, coin)
+	err = coinRepo.SaveCoins(ctx, coin)
 
 	if err != nil {
 		t.Errorf("Expected nil error, but got: %v", err)
@@ -58,7 +58,7 @@ func TestSaveCoinsPositive(t *testing.T) {
 		if _, err := exec(string(down)); err != nil {
 			t.Fatal(err)
 		}
-		userRepo.Close()
+		coinRepo.Close()
 	})
 }
 
@@ -76,7 +76,7 @@ func TestSaveCoinsNegative(t *testing.T) {
 		},
 	}
 
-	userRepo, exec, err := newTest(t, cfg)
+	coinRepo, exec, err := newTest(t, cfg)
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
@@ -85,7 +85,7 @@ func TestSaveCoinsNegative(t *testing.T) {
 
 	coin := model.Coin{}
 
-	err = userRepo.SaveCoins(ctx, coin)
+	err = coinRepo.SaveCoins(ctx, coin)
 
 	if err != nil {
 		t.Errorf("Expected nil error, but got: %v", err)
@@ -99,7 +99,7 @@ func TestSaveCoinsNegative(t *testing.T) {
 		if _, err := exec(string(down)); err != nil {
 			t.Fatal(err)
 		}
-		userRepo.Close()
+		coinRepo.Close()
 	})
 }
 
@@ -117,7 +117,7 @@ func TestGetCoinPositive(t *testing.T) {
 		},
 	}
 
-	userRepo, exec, err := newTest(t, cfg)
+	coinRepo, exec, err := newTest(t, cfg)
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
@@ -136,7 +136,7 @@ func TestGetCoinPositive(t *testing.T) {
 
 	var result model.Coin
 
-	result, err = userRepo.GetCoin(ctx, coin)
+	result, err = coinRepo.GetCoin(ctx, coin)
 	if err != nil {
 		t.Errorf("Expected nil error, but got: %v", err)
 	}
@@ -153,7 +153,7 @@ func TestGetCoinPositive(t *testing.T) {
 		if _, err := exec(string(down)); err != nil {
 			t.Fatal(err)
 		}
-		userRepo.Close()
+		coinRepo.Close()
 	})
 }
 
@@ -171,7 +171,7 @@ func TestGetCoinNegative(t *testing.T) {
 		},
 	}
 
-	userRepo, exec, err := newTest(t, cfg)
+	coinRepo, exec, err := newTest(t, cfg)
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
@@ -180,7 +180,7 @@ func TestGetCoinNegative(t *testing.T) {
 
 	coin := ""
 
-	_, err = userRepo.GetCoin(ctx, coin)
+	_, err = coinRepo.GetCoin(ctx, coin)
 	if err == nil {
 		t.Error("Expected error")
 	} else {
@@ -197,7 +197,7 @@ func TestGetCoinNegative(t *testing.T) {
 		if _, err := exec(string(down)); err != nil {
 			t.Fatal(err)
 		}
-		userRepo.Close()
+		coinRepo.Close()
 	})
 }
 
@@ -213,7 +213,7 @@ func TestGetMainCoins(t *testing.T) {
 		},
 	}
 
-	userRepo, exec, err := newTest(t, cfg)
+	coinRepo, exec, err := newTest(t, cfg)
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
@@ -222,7 +222,7 @@ func TestGetMainCoins(t *testing.T) {
 
 	var result []*model.Coin
 
-	result, err = userRepo.GetMainCoins(ctx)
+	result, err = coinRepo.GetMainCoins(ctx)
 	if err != nil {
 		t.Errorf("Expected nil error, but got: %v", err)
 	}
@@ -239,7 +239,7 @@ func TestGetMainCoins(t *testing.T) {
 		if _, err := exec(string(down)); err != nil {
 			t.Fatal(err)
 		}
-		userRepo.Close()
+		coinRepo.Close()
 	})
 }
 
@@ -284,5 +284,5 @@ func newTest(t *testing.T, cfg config.Database) (repository.CoinRepository, func
 		t.Fatal(err)
 	}
 
-	return coinRepostiry{db}, db.Exec, nil
+	return coinRepository{db}, db.Exec, nil
 }

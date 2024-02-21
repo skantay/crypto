@@ -15,3 +15,8 @@ dockerdown:
 
 go-test:
 	go test ./... -v --cover
+
+git-push:
+	git add .
+	git commit -m "uploading"
+	git push

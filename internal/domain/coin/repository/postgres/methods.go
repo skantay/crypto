@@ -9,7 +9,7 @@ import (
 	"github.com/skantay/crypto/internal/domain/coin/model"
 )
 
-func (c coinRepostiry) SaveCoins(ctx context.Context, coin model.Coin) error {
+func (c coinRepository) SaveCoins(ctx context.Context, coin model.Coin) error {
 	stmt := `INSERT INTO coins(name, price, min_price, max_price, hour_change_price)
 			VALUES($1, $2, $3, $4, $5);`
 
@@ -25,7 +25,7 @@ func (c coinRepostiry) SaveCoins(ctx context.Context, coin model.Coin) error {
 	return nil
 }
 
-func (c coinRepostiry) GetCoin(ctx context.Context, coin string) (model.Coin, error) {
+func (c coinRepository) GetCoin(ctx context.Context, coin string) (model.Coin, error) {
 	coinResult := &model.Coin{}
 
 	stmt := `SELECT * FROM coins WHERE name = $1`
@@ -42,7 +42,7 @@ func (c coinRepostiry) GetCoin(ctx context.Context, coin string) (model.Coin, er
 	return *coinResult, nil
 }
 
-func (c coinRepostiry) GetMainCoins(ctx context.Context) ([]*model.Coin, error) {
+func (c coinRepository) GetMainCoins(ctx context.Context) ([]*model.Coin, error) {
 	result := []*model.Coin{}
 
 	stmt := `SELECT * FROM coins WHERE name = 'BTC' OR name = 'ETH';`
