@@ -16,6 +16,7 @@ type CoinGeckoResponse struct {
 		Low                map[string]float64 `json:"low_24h"`
 		High               map[string]float64 `json:"high_24h"`
 	} `json:"market_data"`
+	Error string `json:"error"`
 }
 
 func getCoinData(coinID string) (*model.Coin, error) {
@@ -35,6 +36,10 @@ func getCoinData(coinID string) (*model.Coin, error) {
 	err = json.Unmarshal(body, &coinData)
 	if err != nil {
 		return nil, err
+	}
+
+	if coinData.Error != "" {
+		return nil, model.ErrNoRecord
 	}
 
 	result := &model.Coin{

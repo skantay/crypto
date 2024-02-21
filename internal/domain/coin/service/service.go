@@ -49,8 +49,8 @@ func (c coinService) UpdateCoin(ctx context.Context, coins []model.Coin) []error
 
 func (c coinService) GetMainCoins(ctx context.Context) ([]*model.Coin, error) {
 	coins := []string{
-		"BTC",
-		"ETH",
+		"bitcoin",
+		"ethereum",
 	}
 
 	result, err := c.repo.GetMainCoins(ctx, coins)
