@@ -33,6 +33,7 @@ type Server struct {
 type API struct {
 	CoinMarket string `yaml:"coinMarket"`
 	TraderMade string `yaml:"traderMade`
+	Telegram   string `yaml:"telegram"`
 }
 
 func Load(path string) (Config, error) {
