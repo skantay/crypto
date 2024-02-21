@@ -1,49 +1,39 @@
 package httprouterv1
 
 import (
+	"errors"
 	"fmt"
-	"io"
-	"log"
 	"net/http"
-	"strings"
 
 	"github.com/julienschmidt/httprouter"
+	"github.com/skantay/crypto/internal/domain/coin/model"
 )
 
 func (c controller) rates(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	url := "https://api.coingecko.com/api/v3/coins/list"
-	//      https://marketdata.tradermade.com/api/v1/live_currencies_list?      api_key=     aiywJ90CwaNvhSMsYAvo
-	req, err := http.Get(url)
-	if err != nil {
-		return
-	}
-	body, readErr := io.ReadAll(req.Body)
-	if readErr != nil {
-		log.Fatal(readErr)
-	}
-	fmt.Println(string(body))
-	w.Header().Set("Content-Type", "application/json")
-
-	w.Write(body)
+	return
 }
 
 func (c controller) ratesCoin(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	coin := p.ByName("coin")
+	coinToFind := p.ByName("coin")
 
-	model, err := c.service.CoinService.GetCoin(r.Context(), strings.ToLower(coin))
+	coin, err := c.service.CoinService.GetCoin(r.Context(), coinToFind)
 	if err != nil {
-		// if errors.Is(err, asd.ErrNoRecord) {
-		// 	coins := []*asd.Coin{
-		// 		&asd.Coin{
+		if errors.Is(err, model.ErrNoRecord) {
+			newCoin, err := getCoinData(coinToFind)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
 
-		// 		}
-		// 	}
+			errs := c.service.CoinService.CreateCoin(r.Context(), []model.Coin{*newCoin})
+			if len(errs) != 0 {
+				http.Error(w, errs[0].Error(), http.StatusInternalServerError)
+				return
+			}
 
-		// 	c.service.CoinService.CreateCoin(ctx, coins)
-		// }
-		http.NotFound(w, r)
-		return
+			coin, err = c.service.CoinService.GetCoin(r.Context(), coinToFind)
+		}
 	}
 
-	w.Write([]byte(fmt.Sprintf("%v", model)))
+	w.Write([]byte(fmt.Sprintf("%v", coin)))
 }
