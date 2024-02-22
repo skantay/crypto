@@ -12,6 +12,9 @@ dockershell:
 dockerup:
 	docker-compose up --build
 
+dockerUP:
+	docker-compose up -d --build
+
 dockerdown:
 	docker-compose down
 
@@ -22,3 +25,6 @@ git-push:
 	git add .
 	git commit -m "uploading"
 	git push
+
+createdatabase:
+	docker exec -i crypto_postgres_1 psql -U user -c "CREATE DATABASE domain;"
