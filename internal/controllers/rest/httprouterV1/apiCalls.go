@@ -1,6 +1,7 @@
 package httprouterv1
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -8,6 +9,12 @@ import (
 
 	"github.com/skantay/crypto/internal/domain/coin/model"
 )
+
+type apiCalls interface {
+	getCoin(ctx context.Context, name string) (model.Coin, error)
+}
+
+type coingecko struct{}
 
 type CoinGeckoResponse struct {
 	MarketData struct {
@@ -19,34 +26,34 @@ type CoinGeckoResponse struct {
 	Error string `json:"error"`
 }
 
-func getCoinData(coinID string) (*model.Coin, error) {
+func (c coingecko) getCoin(ctx context.Context, coinID string) (model.Coin, error) {
 	url := fmt.Sprintf("https://api.coingecko.com/api/v3/coins/%s", coinID)
 	response, err := http.Get(url)
 	if err != nil {
-		return nil, err
+		return model.Coin{}, err
 	}
 	defer response.Body.Close()
 
 	body, err := io.ReadAll(response.Body)
 	if err != nil {
-		return nil, err
+		return model.Coin{}, err
 	}
 
 	var coinData CoinGeckoResponse
 	err = json.Unmarshal(body, &coinData)
 	if err != nil {
-		return nil, err
+		return model.Coin{}, err
 	}
 
 	if coinData.Error != "" {
-		return nil, model.ErrNoRecord
+		return model.Coin{}, model.ErrNoRecord
 	}
 
-	result := &model.Coin{
+	result := model.Coin{
 		Name:            coinID,
-		Price:           int(coinData.MarketData.CurrentPrice["usd"]),
-		MinPrice:        int(coinData.MarketData.Low["usd"]),
-		MaxPrice:        int(coinData.MarketData.High["usd"]),
+		Price:           coinData.MarketData.CurrentPrice["usd"],
+		MinPrice:        coinData.MarketData.Low["usd"],
+		MaxPrice:        coinData.MarketData.High["usd"],
 		HourChangePrice: coinData.MarketData.PriceChangePercent["usd"],
 	}
 

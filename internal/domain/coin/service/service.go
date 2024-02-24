@@ -13,6 +13,7 @@ type CoinService interface {
 	UpdateCoin(ctx context.Context, coins []model.Coin) []error
 	GetMainCoins(ctx context.Context) ([]model.Coin, []error)
 	GetCoin(ctx context.Context, coin string) (model.Coin, error)
+	GetAllCoins(ctx context.Context) ([]string, error)
 }
 
 type coinService struct {
@@ -23,11 +24,15 @@ func New(repo repository.CoinRepository) CoinService {
 	return coinService{repo}
 }
 
+func (c coinService) GetAllCoins(ctx context.Context) ([]string, error) {
+	return c.repo.GetAllCoins(ctx)
+}
+
 func (c coinService) CreateCoin(ctx context.Context, coins []model.Coin) []error {
 	var errs []error
 
 	for _, coin := range coins {
-		if err := c.repo.CreateCoin(ctx, coin); err != nil {
+		if _, err := c.repo.CreateCoin(ctx, coin); err != nil {
 			errs = append(errs, err)
 		}
 	}
@@ -39,7 +44,7 @@ func (c coinService) UpdateCoin(ctx context.Context, coins []model.Coin) []error
 	var errs []error
 
 	for _, coin := range coins {
-		if err := c.repo.UpdateCoin(ctx, coin); err != nil {
+		if _, err := c.repo.UpdateCoin(ctx, coin); err != nil {
 			errs = append(errs, err)
 		}
 	}

@@ -9,7 +9,7 @@ import (
 	"github.com/skantay/crypto/internal/domain/coin/model"
 )
 
-func (c coinRepository) CreateCoin(ctx context.Context, coin model.Coin) error {
+func (c coinRepository) CreateCoin(ctx context.Context, coin model.Coin) (model.Coin, error) {
 	stmt := `INSERT INTO domain.coins(name, price, min_price, max_price, hour_change_price)
 				VALUES($1, $2, $3, $4, $5);`
 
@@ -19,13 +19,13 @@ func (c coinRepository) CreateCoin(ctx context.Context, coin model.Coin) error {
 		coin.MinPrice,
 		coin.MaxPrice,
 		coin.HourChangePrice); err != nil {
-		return fmt.Errorf("exec error: %w", err)
+		return model.Coin{}, fmt.Errorf("exec error: %w", err)
 	}
 
-	return nil
+	return coin, nil
 }
 
-func (c coinRepository) UpdateCoin(ctx context.Context, coin model.Coin) error {
+func (c coinRepository) UpdateCoin(ctx context.Context, coin model.Coin) (model.Coin, error) {
 	stmt := `UPDATE domain.coins SET price = $1,
 				min_price = $2,
 				max_price = $3,
@@ -38,10 +38,10 @@ func (c coinRepository) UpdateCoin(ctx context.Context, coin model.Coin) error {
 		coin.MaxPrice,
 		coin.HourChangePrice,
 		coin.Name); err != nil {
-		return fmt.Errorf("exec error: %w", err)
+		return model.Coin{}, fmt.Errorf("exec error: %w", err)
 	}
 
-	return nil
+	return coin, nil
 }
 
 func (c coinRepository) GetCoin(ctx context.Context, coin string) (model.Coin, error) {
@@ -66,4 +66,30 @@ func (c coinRepository) GetCoin(ctx context.Context, coin string) (model.Coin, e
 	}
 
 	return *coinResult, nil
+}
+
+func (c coinRepository) GetAllCoins(ctx context.Context) ([]string, error) {
+	var coinsResult []string
+
+	stmt := `SELECT name FROM domain.coins`
+
+	rows, err := c.db.QueryContext(ctx, stmt)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err != nil {
+			return nil, err
+		}
+		coinsResult = append(coinsResult, name)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return coinsResult, nil
 }

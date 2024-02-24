@@ -44,7 +44,7 @@ func TestSaveCoinsPositive(t *testing.T) {
 		HourChangePrice: 1.5,
 	}
 
-	err = coinRepo.CreateCoin(ctx, coin)
+	_, err = coinRepo.CreateCoin(ctx, coin)
 
 	if err != nil {
 		t.Errorf("Expected nil error, but got: %v", err)
@@ -85,7 +85,7 @@ func TestSaveCoinsNegative(t *testing.T) {
 
 	coin := model.Coin{}
 
-	err = coinRepo.CreateCoin(ctx, coin)
+	_, err = coinRepo.CreateCoin(ctx, coin)
 
 	if err != nil {
 		t.Errorf("Expected nil error, but got: %v", err)

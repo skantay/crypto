@@ -30,18 +30,46 @@ func (c controller) rates(w http.ResponseWriter, r *http.Request, _ httprouter.P
 func (c controller) ratesCoin(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	coinToFind := p.ByName("coin")
 
-	coin, err := c.service.CoinService.GetCoin(r.Context(), coinToFind)
+	var coin model.Coin
+
+	var err error
+
+	coin, err = c.service.CoinService.GetCoin(r.Context(), coinToFind)
 	if err != nil {
 		if errors.Is(err, model.ErrNoRecord) {
-			if err := writeJSON(w, wrapJSON{"error": "not found"}); err != nil {
+
+			// get by api
+			coin, err = c.apiCalls.getCoin(r.Context(), coinToFind)
+			// if error occured
+			if err != nil {
+				// if coin is not found by api then we respond with error
+				if errors.Is(err, model.ErrNoRecord) {
+					if err := writeJSON(w, wrapJSON{"error": err.Error()}); err != nil {
+						internalServerError(w, err)
+					}
+
+					return
+				}
+
+				// if smt happens we respond with internal server error
 				internalServerError(w, err)
+
+				return
 			}
+
+			// create coin in db
+			if coin.Price != 0.00 {
+				if errs := c.service.CoinService.CreateCoin(r.Context(), []model.Coin{coin}); len(errs) != 0 && errs[0] != nil {
+					internalServerError(w, errs[0])
+
+					return
+				}
+			}
+		} else {
+			internalServerError(w, err)
 
 			return
 		}
-		internalServerError(w, err)
-
-		return
 	}
 
 	if err := writeJSON(w, wrapJSON{"coin": coin}); err != nil {
