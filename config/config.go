@@ -34,6 +34,7 @@ type API struct {
 	CoinMarket string `yaml:"coinMarket"`
 	TraderMade string `yaml:"traderMade`
 	Telegram   string `yaml:"telegram"`
+	Sentry     string `yaml:"sentry"`
 }
 
 func Load(path string) (Config, error) {

@@ -9,10 +9,10 @@ import (
 )
 
 type CoinService interface {
-	CreateCoin(context.Context, []model.Coin) []error
-	UpdateCoin(context.Context, []model.Coin) []error
-	GetMainCoins(context.Context) ([]*model.Coin, error)
-	GetCoin(context.Context, string) (model.Coin, error)
+	CreateCoin(ctx context.Context, coins []model.Coin) []error
+	UpdateCoin(ctx context.Context, coins []model.Coin) []error
+	GetMainCoins(ctx context.Context) ([]model.Coin, []error)
+	GetCoin(ctx context.Context, coin string) (model.Coin, error)
 }
 
 type coinService struct {
@@ -27,7 +27,7 @@ func (c coinService) CreateCoin(ctx context.Context, coins []model.Coin) []error
 	var errs []error
 
 	for _, coin := range coins {
-		if err := c.repo.SaveCoin(ctx, coin); err != nil {
+		if err := c.repo.CreateCoin(ctx, coin); err != nil {
 			errs = append(errs, err)
 		}
 	}
@@ -47,25 +47,35 @@ func (c coinService) UpdateCoin(ctx context.Context, coins []model.Coin) []error
 	return errs
 }
 
-func (c coinService) GetMainCoins(ctx context.Context) ([]*model.Coin, error) {
+func (c coinService) GetMainCoins(ctx context.Context) ([]model.Coin, []error) {
+	var errs []error
+
 	coins := []string{
 		"bitcoin",
 		"ethereum",
 	}
 
-	result, err := c.repo.GetMainCoins(ctx, coins)
-	if err != nil {
-		return nil, fmt.Errorf("trouble with getting coins:%w", err)
+	result := make([]model.Coin, 0, len(coins))
+
+	for _, coin := range coins {
+		gotCoin, err := c.repo.GetCoin(ctx, coin)
+		if err != nil {
+			errs = append(errs, err)
+
+			continue
+		}
+
+		result = append(result, gotCoin)
 	}
 
-	return result, nil
+	return result, errs
 }
 
 func (c coinService) GetCoin(ctx context.Context, coin string) (model.Coin, error) {
-	result, err := c.repo.GetCoin(ctx, coin)
+	gotCoin, err := c.repo.GetCoin(ctx, coin)
 	if err != nil {
-		return model.Coin{}, fmt.Errorf("trouble with getting a coin:%w", err)
+		return model.Coin{}, fmt.Errorf("trouble with getting a coin: %w", err)
 	}
 
-	return result, nil
+	return gotCoin, nil
 }

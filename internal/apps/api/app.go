@@ -14,6 +14,9 @@ import (
 
 func Run() error {
 	cfg, err := config.Load("config/config.yaml")
+	if err != nil {
+		return err
+	}
 
 	db, err := sql.Open("postgres", fmt.Sprintf(`
 		user=%s
