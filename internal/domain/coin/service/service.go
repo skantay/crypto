@@ -65,7 +65,7 @@ func (c coinService) GetMainCoins(ctx context.Context) ([]model.Coin, []error) {
 	for _, coin := range coins {
 		gotCoin, err := c.repo.GetCoin(ctx, coin)
 		if err != nil {
-			errs = append(errs, err)
+			errs = append(errs, fmt.Errorf("%v:%v", coin, err))
 
 			continue
 		}

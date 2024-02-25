@@ -2,6 +2,7 @@ package httprouterv1
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -25,17 +26,27 @@ func (c controller) refreshCoins(ctx context.Context, interval time.Duration) {
 			for _, coin := range coins {
 				go func(coin string) {
 					defer wg.Done()
-					modelCoin, _ := c.apiCalls.getCoin(ctx, coin)
-					c.infoLog.Printf("%s updated", coin)
-					_ = c.service.CoinService.UpdateCoin(ctx, []model.Coin{modelCoin})
+					modelCoin, _, err := c.apiCalls.getCoin(ctx, coin)
+					if err != nil {
+						if errors.Is(err, model.ErrNoRecord) {
+							c.errorLog.Printf("error during updating: %v", err)
+							return
+						}
+						c.errorLog.Printf("error during updating: %v", err)
+					}
+					errs := c.service.CoinService.UpdateCoin(ctx, []model.Coin{modelCoin})
+					if len(errs) != 0 && errs[0] != nil {
+						c.errorLog.Printf("error during updating: %v", err)
+					} else {
+						c.infoLog.Printf("%s updated", coin)
+					}
 				}(coin)
 			}
 
+			wg.Wait()
+			c.infoLog.Print("updating ended")
 		case <-ctx.Done():
 			fmt.Println("Context canceled, stopping refreshCoins")
-			break
 		}
 	}
-
-	wg.Wait()
 }

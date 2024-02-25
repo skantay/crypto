@@ -11,7 +11,7 @@ import (
 )
 
 type apiCalls interface {
-	getCoin(ctx context.Context, name string) (model.Coin, error)
+	getCoin(ctx context.Context, name string) (model.Coin, int, error)
 }
 
 type coingecko struct{}
@@ -23,30 +23,34 @@ type CoinGeckoResponse struct {
 		Low                map[string]float64 `json:"low_24h"`
 		High               map[string]float64 `json:"high_24h"`
 	} `json:"market_data"`
-	Error string `json:"error"`
+
+	Status struct {
+		ErrorCode    int    `json:"error_code"`
+		ErrorMessage string `json:"error_message"`
+	} `json:"status"`
 }
 
-func (c coingecko) getCoin(ctx context.Context, coinID string) (model.Coin, error) {
+func (c coingecko) getCoin(ctx context.Context, coinID string) (model.Coin, int, error) {
 	url := fmt.Sprintf("https://api.coingecko.com/api/v3/coins/%s", coinID)
 	response, err := http.Get(url)
 	if err != nil {
-		return model.Coin{}, err
+		return model.Coin{}, response.StatusCode, err
 	}
 	defer response.Body.Close()
 
 	body, err := io.ReadAll(response.Body)
 	if err != nil {
-		return model.Coin{}, err
+		return model.Coin{}, http.StatusInternalServerError, err
 	}
 
 	var coinData CoinGeckoResponse
 	err = json.Unmarshal(body, &coinData)
 	if err != nil {
-		return model.Coin{}, err
+		return model.Coin{}, http.StatusInternalServerError, err
 	}
 
-	if coinData.Error != "" {
-		return model.Coin{}, model.ErrNoRecord
+	if coinData.Status.ErrorCode == 429 {
+		return model.Coin{}, coinData.Status.ErrorCode, model.ErrNoRecord
 	}
 
 	result := model.Coin{
@@ -57,7 +61,7 @@ func (c coingecko) getCoin(ctx context.Context, coinID string) (model.Coin, erro
 		HourChangePrice: coinData.MarketData.PriceChangePercent["usd"],
 	}
 
-	return result, nil
+	return result, http.StatusOK, nil
 }
 
 //{"id":"ethereum","symbol":"eth","name":"Ethereum"}
