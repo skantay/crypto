@@ -12,7 +12,6 @@ type Coin struct {
 	Id string `json:"id"`
 }
 
-// Corrected struct to directly represent an array of Coin objects
 type CoinsResponse []Coin
 
 func main() {
@@ -33,7 +32,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// Iterate over the coins and print their IDs
 	for _, coin := range result {
 		fmt.Println(coin.Id)
 	}
