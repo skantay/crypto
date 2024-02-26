@@ -11,16 +11,20 @@ import (
 func (c controller) rates(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	coins, errs := c.service.CoinService.GetMainCoins(r.Context())
 	if len(errs) != 0 {
-		// c.errorLog.Print(errs)
-		// if err := wrapErrorJSON(w, errs); err != nil {
-		// 	c.errorLog.Print(err)
-		// 	internalServerError(w, err)
-		// }
 
-		// return
+		c.apiCalls.getCoin(r.Context(), "bitcoin")
+
+		c.errorLog.Print(errs)
+
+		if err := writeJSON(w, wrapJSON{"error": errs[0].Error()}); err != nil {
+			c.errorLog.Print(err)
+			internalServerError(w, err)
+		}
+
+		return
 	}
 
-	if err := writeJSON(w, wrapJSON{"coins": coins, "errors": errs}); err != nil {
+	if err := writeJSON(w, wrapJSON{"coins": coins}); err != nil {
 		internalServerError(w, err)
 
 		return

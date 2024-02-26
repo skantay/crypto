@@ -201,6 +201,153 @@ func TestGetCoinNegative(t *testing.T) {
 	})
 }
 
+// Test UpdateCoin function
+// Positive Case
+func TestUpdateCoin(t *testing.T) {
+	cfg := config.Database{
+		Postgres: config.Postgres{
+			User:     "user",
+			Password: "pass",
+			Host:     "localhost",
+			DBName:   "domain_test",
+			Port:     5432,
+			SSLMode:  "disable",
+		},
+	}
+
+	coinRepo, exec, err := newTest(t, cfg)
+	if err != nil {
+		t.Errorf("unexpected error: %v", err)
+	}
+
+	ctx := context.Background()
+
+	coin := model.Coin{
+		Name:            "BTC",
+		MinPrice:        0,
+		MaxPrice:        0,
+		Price:           0,
+		HourChangePrice: 0,
+	}
+
+	_, err = coinRepo.UpdateCoin(ctx, coin)
+	if err != nil {
+		t.Errorf("unexpected error: %v", err)
+	}
+
+	gotCoin, err := coinRepo.GetCoin(ctx, "BTC")
+	if err != nil {
+		t.Errorf("unexpected error: %v", err)
+	}
+
+	if gotCoin.Price != coin.Price {
+		t.Errorf("unmatch got: %v\nwant: %v", gotCoin, coin)
+	}
+
+	t.Cleanup(func() {
+		down, err := os.ReadFile("migrations/test.down.sql")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := exec(string(down)); err != nil {
+			t.Fatal(err)
+		}
+		coinRepo.Close()
+	})
+}
+
+// Test UpdateCoin function
+// Negative Case
+func TestUpdateCoinNegative(t *testing.T) {
+	cfg := config.Database{
+		Postgres: config.Postgres{
+			User:     "user",
+			Password: "pass",
+			Host:     "localhost",
+			DBName:   "domain_test",
+			Port:     5432,
+			SSLMode:  "disable",
+		},
+	}
+
+	coinRepo, exec, err := newTest(t, cfg)
+	if err != nil {
+		t.Errorf("unexpected error: %v", err)
+	}
+
+	ctx := context.Background()
+
+	coin := model.Coin{
+		Name:            "NOT EXISTENT",
+		MinPrice:        0,
+		MaxPrice:        0,
+		Price:           0,
+		HourChangePrice: 0,
+	}
+
+	_, err = coinRepo.UpdateCoin(ctx, coin)
+	if err == nil {
+		t.Error("expected error")
+	}
+
+	if !errors.Is(err, model.ErrNoRecord) {
+		t.Errorf("expected %v\n got%v", model.ErrNoRecord, err)
+	}
+
+	t.Cleanup(func() {
+		down, err := os.ReadFile("migrations/test.down.sql")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := exec(string(down)); err != nil {
+			t.Fatal(err)
+		}
+		coinRepo.Close()
+	})
+}
+
+// Test GetAllCoins function
+// Positive Case
+func TestGetAllCoins(t *testing.T) {
+	cfg := config.Database{
+		Postgres: config.Postgres{
+			User:     "user",
+			Password: "pass",
+			Host:     "localhost",
+			DBName:   "domain_test",
+			Port:     5432,
+			SSLMode:  "disable",
+		},
+	}
+
+	coinRepo, exec, err := newTest(t, cfg)
+	if err != nil {
+		t.Errorf("unexpected error: %v", err)
+	}
+
+	ctx := context.Background()
+
+	coins, err := coinRepo.GetAllCoins(ctx)
+	if err != nil {
+		t.Errorf("unexpected error: %v", err)
+	}
+
+	if coins[0] != "BTC" {
+		t.Errorf("expected BTC but got %v", coins[0])
+	}
+
+	t.Cleanup(func() {
+		down, err := os.ReadFile("migrations/test.down.sql")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := exec(string(down)); err != nil {
+			t.Fatal(err)
+		}
+		coinRepo.Close()
+	})
+}
+
 func newTest(t *testing.T, cfg config.Database) (repository.CoinRepository, func(string, ...any) (sql.Result, error), error) {
 	db, err := sql.Open("postgres", fmt.Sprintf(`
 		user=%s

@@ -9,9 +9,9 @@ import (
 )
 
 type CoinService interface {
-	CreateCoin(ctx context.Context, coins []model.Coin) []error
-	UpdateCoin(ctx context.Context, coins []model.Coin) []error
-	GetMainCoins(ctx context.Context) ([]model.Coin, []error)
+	CreateCoin(ctx context.Context, coins []model.Coin) error
+	UpdateCoin(ctx context.Context, coins []model.Coin) error
+	GetMainCoins(ctx context.Context) ([]model.Coin, error)
 	GetCoin(ctx context.Context, coin string) (model.Coin, error)
 	GetAllCoins(ctx context.Context) ([]string, error)
 }
@@ -28,33 +28,27 @@ func (c coinService) GetAllCoins(ctx context.Context) ([]string, error) {
 	return c.repo.GetAllCoins(ctx)
 }
 
-func (c coinService) CreateCoin(ctx context.Context, coins []model.Coin) []error {
-	var errs []error
-
+func (c coinService) CreateCoin(ctx context.Context, coins []model.Coin) error {
 	for _, coin := range coins {
 		if _, err := c.repo.CreateCoin(ctx, coin); err != nil {
-			errs = append(errs, err)
+			return fmt.Errorf("%v:%v", coin, err)
 		}
 	}
 
-	return errs
+	return nil
 }
 
-func (c coinService) UpdateCoin(ctx context.Context, coins []model.Coin) []error {
-	var errs []error
-
+func (c coinService) UpdateCoin(ctx context.Context, coins []model.Coin) error {
 	for _, coin := range coins {
 		if _, err := c.repo.UpdateCoin(ctx, coin); err != nil {
-			errs = append(errs, err)
+			return fmt.Errorf("%v:%v", coin, err)
 		}
 	}
 
-	return errs
+	return nil
 }
 
-func (c coinService) GetMainCoins(ctx context.Context) ([]model.Coin, []error) {
-	var errs []error
-
+func (c coinService) GetMainCoins(ctx context.Context) ([]model.Coin, error) {
 	coins := []string{
 		"bitcoin",
 		"ethereum",
@@ -65,21 +59,19 @@ func (c coinService) GetMainCoins(ctx context.Context) ([]model.Coin, []error) {
 	for _, coin := range coins {
 		gotCoin, err := c.repo.GetCoin(ctx, coin)
 		if err != nil {
-			errs = append(errs, fmt.Errorf("%v:%v", coin, err))
-
-			continue
+			return nil, fmt.Errorf("%v:%v", coin, err)
 		}
 
 		result = append(result, gotCoin)
 	}
 
-	return result, errs
+	return result, nil
 }
 
 func (c coinService) GetCoin(ctx context.Context, coin string) (model.Coin, error) {
 	gotCoin, err := c.repo.GetCoin(ctx, coin)
 	if err != nil {
-		return model.Coin{}, fmt.Errorf("trouble with getting a coin: %w", err)
+		return model.Coin{}, fmt.Errorf("%v:%v", coin, err)
 	}
 
 	return gotCoin, nil

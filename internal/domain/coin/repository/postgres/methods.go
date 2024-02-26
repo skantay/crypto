@@ -32,13 +32,23 @@ func (c coinRepository) UpdateCoin(ctx context.Context, coin model.Coin) (model.
 				hour_change_price = $4
 				WHERE name = $5;`
 
-	if _, err := c.db.ExecContext(ctx, stmt,
+	result, err := c.db.ExecContext(ctx, stmt,
 		coin.Price,
 		coin.MinPrice,
 		coin.MaxPrice,
 		coin.HourChangePrice,
-		coin.Name); err != nil {
+		coin.Name)
+	if err != nil {
 		return model.Coin{}, fmt.Errorf("exec error: %w", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return model.Coin{}, fmt.Errorf("rows affected error: %w", err)
+	}
+
+	if rowsAffected == 0 {
+		return model.Coin{}, model.ErrNoRecord
 	}
 
 	return coin, nil
