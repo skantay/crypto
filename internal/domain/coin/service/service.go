@@ -31,7 +31,7 @@ func (c coinService) GetAllCoins(ctx context.Context) ([]string, error) {
 func (c coinService) CreateCoin(ctx context.Context, coins []model.Coin) error {
 	for _, coin := range coins {
 		if _, err := c.repo.CreateCoin(ctx, coin); err != nil {
-			return fmt.Errorf("%v:%v", coin, err)
+			return fmt.Errorf("%v: %w", coin.Name, err)
 		}
 	}
 
@@ -41,7 +41,7 @@ func (c coinService) CreateCoin(ctx context.Context, coins []model.Coin) error {
 func (c coinService) UpdateCoin(ctx context.Context, coins []model.Coin) error {
 	for _, coin := range coins {
 		if _, err := c.repo.UpdateCoin(ctx, coin); err != nil {
-			return fmt.Errorf("%v:%v", coin, err)
+			return fmt.Errorf("%v: %w", coin.Name, err)
 		}
 	}
 
@@ -59,7 +59,7 @@ func (c coinService) GetMainCoins(ctx context.Context) ([]model.Coin, error) {
 	for _, coin := range coins {
 		gotCoin, err := c.repo.GetCoin(ctx, coin)
 		if err != nil {
-			return nil, fmt.Errorf("%v:%v", coin, err)
+			return nil, fmt.Errorf("%v: %w", coin, err)
 		}
 
 		result = append(result, gotCoin)
@@ -71,7 +71,7 @@ func (c coinService) GetMainCoins(ctx context.Context) ([]model.Coin, error) {
 func (c coinService) GetCoin(ctx context.Context, coin string) (model.Coin, error) {
 	gotCoin, err := c.repo.GetCoin(ctx, coin)
 	if err != nil {
-		return model.Coin{}, fmt.Errorf("%v:%v", coin, err)
+		return model.Coin{}, fmt.Errorf("%v: %w", coin, err)
 	}
 
 	return gotCoin, nil
