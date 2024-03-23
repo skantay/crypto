@@ -1,1 +1,0 @@
-CREATE DATABASE domain_test;
