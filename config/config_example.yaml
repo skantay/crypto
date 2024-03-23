@@ -1,0 +1,13 @@
+database:
+  postgres:
+    user: user_example
+    password: pass_example
+    dbname: dbname_example
+    host: localhost_example
+    port:  0000_example
+    sslmode: disable_example
+server:
+  host:  localhost_example
+  port: 0000_example
+api:
+  coinMarket: key_example
